@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Enter Dashboard Key</title>
+</head>
+<body>
+  <h2>Enter your Dashboard Key:</h2>
+  <input type="text" id="dashboardKey" placeholder="e.g. abc123" />
+  <button onclick="goToDashboard()">Go</button>
+
+  <script>
+    function goToDashboard() {
+      const key = document.getElementById("dashboardKey").value.trim();
+      if (key) {
+        window.location.href = `/${key}.html`;
+      } else {
+        alert("Please enter a dashboard key.");
+      }
+    }
+  </script>
+</body>
+</html>
