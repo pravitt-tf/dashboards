@@ -26,7 +26,9 @@ jobs:
       - name: Install and Deploy with Netlify CLI
         run: |
           npm install -g netlify-cli
-          netlify deploy --prod --file latest-dashboard.html
+          mkdir public
+          mv latest-dashboard.html public/index.html
+          netlify deploy --prod --dir=public
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
