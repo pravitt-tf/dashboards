@@ -16,6 +16,7 @@ jobs:
   deploy:
     # The type of virtual machine to run the job on. "ubuntu-latest" is standard and cost-effective.
     runs-on: ubuntu-latest
+    environment: trial_env
 
     # A job contains a sequence of tasks called steps.
     steps:
