@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Financial Plan Dashboard - Redesigned</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7fafc; 
+        }
+        .kpi-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #e2e8f0; 
+        }
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.07), 0 4px 10px -6px rgba(0, 0, 0, 0.05); 
+        }
+        .nav-item {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        .nav-item:hover {
+            color: #FFFFFF;
+            background-color: #374151; 
+            border-bottom-color: #60a5fa; 
+        }
+        .nav-item.active {
+            background-color: #1f2937; 
+            color: #FFFFFF;
+            border-bottom-color: #2563eb; 
+        }
+        .table-header th {
+            background-color: #f1f5f9; 
+            font-weight: 600;
+            color: #334155;
+        }
+        .table-row-even {
+            background-color: #f8fafc;
+        }
+        .table-row-odd {
+            background-color: #ffffff;
+        }
+        .goal-row.hidden-by-filter {
+            display: none !important;
+        }
+        .chart-container {
+            position: relative;
+            height: 320px; 
+            width: 100%;
+        }
+        .page-content {
+            display: none;
+        }
+        .page-content.active {
+            display: block;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #edf2f7;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #a0aec0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #718096;
+        }
+        .interactive-icon {
+            cursor: pointer;
+            transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
+            color: #d1d5db; 
+        }
+        .interactive-icon:hover {
+            color: #ffffff; 
+            transform: scale(1.1);
+        }
+        .slicer-button {
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            border: 1px solid #d1d5db;
+        }
+        .slicer-button:hover {
+            border-color: #60a5fa;
+            color: #2563eb;
+        }
+        .slicer-button.active {
+            background-color: #2563eb; 
+            color: white;
+            border-color: #2563eb;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem; 
+        }
+        .slider-container label {
+            margin-right: 12px;
+            min-width: 130px; 
+            color: #4b5563; 
+            font-size: 0.875rem;
+        }
+        .slider-container input[type="range"] {
+            flex-grow: 1;
+            accent-color: #2563eb; 
+            cursor: pointer;
+        }
+        .slider-container span {
+            margin-left: 12px;
+            min-width: 70px; 
+            text-align: right;
+            color: #1f2937; 
+            font-weight: 500;
+        }
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        }
+        .insight-box {
+            border-left-width: 4px;
+            padding: 1rem;
+            border-radius: 0.375rem; 
+        }
+        .insight-box-blue {
+            border-color: #3b82f6; 
+            background-color: #eff6ff; 
+        }
+        .insight-box-green {
+            border-color: #10b981; 
+            background-color: #f0fdf4; 
+        }
+        .insight-box-yellow {
+            border-color: #f59e0b; 
+            background-color: #fffbeb; 
+        }
+        .details-button {
+            background-color: #f3f4f6; 
+            color: #3b82f6; 
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem; 
+            transition: background-color 0.2s ease;
+        }
+        .details-button:hover {
+            background-color: #e5e7eb; 
+        }
+        .details-button i {
+            margin-right: 0.25rem;
+        }
+        #modalGoToPageButton {
+            background-color: #10b981; /* emerald-500 */
+        }
+        #modalGoToPageButton:hover {
+            background-color: #059669; /* emerald-600 */
+        }
+
+    </style>
+</head>
+<body class="p-4 md:p-6">
+
+    <div class="max-w-7xl mx-auto bg-white shadow-xl rounded-lg overflow-hidden">
+
+        <!-- NAVBAR -->
+        <nav class="bg-gray-800 text-gray-300 p-4">
+            <div class="container mx-auto flex flex-wrap justify-between items-center">
+                <div class="text-xl font-semibold text-white">Client Financial Plan</div>
+                <div class="space-x-3 mt-2 md:mt-0">
+                    <button title="Drillthroughs (Demo)" class="interactive-icon" onclick="alert('Global Drillthroughs (Demo)')"><i class="fas fa-chart-pie fa-fw"></i></button>
+                    <button title="Slicers (Demo)" class="interactive-icon" onclick="alert('Global Slicers (Demo)')"><i class="fas fa-filter fa-fw"></i></button>
+                    <button title="Scenario Sliders (Demo)" class="interactive-icon" onclick="alert('Global Scenario Sliders (Demo)')"><i class="fas fa-sliders fa-fw"></i></button>
+                    <button title="Mobile View (Demo)" class="interactive-icon" onclick="alert('Mobile View (Demo)')"><i class="fas fa-mobile-alt fa-fw"></i></button>
+                    <button title="PDF Export (Demo)" class="interactive-icon" onclick="alert('PDF export functionality would be implemented here.')"><i class="fas fa-file-pdf fa-fw"></i></button>
+                </div>
+            </div>
+            <div class="mt-4 overflow-x-auto pb-1">
+                <ul id="mainNav" class="flex space-x-1 md:space-x-2 text-sm md:text-base">
+                    <li class="nav-item active px-4 py-3 rounded-t-md cursor-pointer whitespace-nowrap" data-page="summary">Summary</li>
+                    <li class="nav-item px-4 py-3 rounded-t-md cursor-pointer whitespace-nowrap" data-page="goals">Goals</li>
+                    <li class="nav-item px-4 py-3 rounded-t-md cursor-pointer whitespace-nowrap" data-page="cashflow">Cash Flow</li>
+                    <li class="nav-item px-4 py-3 rounded-t-md cursor-pointer whitespace-nowrap" data-page="loans">Loans</li>
+                    <li class="nav-item px-4 py-3 rounded-t-md cursor-pointer whitespace-nowrap" data-page="assets">Assets</li>
+                    <li class="nav-item px-4 py-3 rounded-t-md cursor-pointer whitespace-nowrap" data-page="retirement">Retirement</li>
+                    <li class="nav-item px-4 py-3 rounded-t-md cursor-pointer whitespace-nowrap" data-page="discretionaryretirement">Discretionary Retirement</li>
+                    <li class="nav-item px-4 py-3 rounded-t-md cursor-pointer whitespace-nowrap" data-page="insurance">Insurance</li>
+                </ul>
+            </div>
+        </nav>
+
+        <div class="p-5 md:p-8">
+            <!-- SUMMARY PAGE -->
+            <div id="pageSummary" class="page-content active">
+                <h2 class="text-3xl font-semibold text-gray-800 mb-8">Financial Plan Summary</h2>
+                <!-- All Key Performance Indicators are indide this grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-7 mb-8">
+                    <div class="kpi-card bg-blue-50 p-5 rounded-xl shadow-md hover:shadow-lg cursor-pointer" onclick="showKPIDetail('Net Worth', '₹85,73,299', 'Total Assets minus Total Liabilities.', 'pageAssets')">
+                        <h3 class="text-sm font-medium text-blue-700 flex items-center"><i class="fas fa-balance-scale fa-fw mr-2 text-blue-500"></i>Net Worth</h3>
+                        <p class="text-3xl font-semibold text-blue-800 mt-1">₹85,73,299</p>
+                    </div>
+                    <div class="kpi-card bg-green-50 p-5 rounded-xl shadow-md hover:shadow-lg cursor-pointer" onclick="showKPIDetail('Monthly Surplus', '₹3,22,000', 'Total Monthly Income (₹3,70,000) minus Total Monthly Expenses (₹48,000).', 'pageCashflow')">
+                        <h3 class="text-sm font-medium text-green-700 flex items-center"><i class="fas fa-wallet fa-fw mr-2 text-green-500"></i>Monthly Surplus</h3>
+                        <p class="text-3xl font-semibold text-green-800 mt-1">₹3,22,000</p>
+                    </div>
+                    <div class="kpi-card bg-indigo-50 p-5 rounded-xl shadow-md hover:shadow-lg cursor-pointer" onclick="showKPIDetail('Total Assets', '₹85,73,299', 'The total value of all financial and physical assets owned.', 'pageAssets')">
+                        <h3 class="text-sm font-medium text-indigo-700 flex items-center"><i class="fas fa-chart-pie fa-fw mr-2 text-indigo-500"></i>Total Assets</h3>
+                        <p class="text-3xl font-semibold text-indigo-800 mt-1">₹85,73,299</p>
+                    </div>
+                    <div class="kpi-card bg-amber-50 p-5 rounded-xl shadow-md hover:shadow-lg cursor-pointer" onclick="showKPIDetail('Retirement Corpus', '₹5.45 Cr', 'The total corpus required to meet retirement expenses.', 'pageRetirement')">
+                        <h3 class="text-sm font-medium text-amber-700 flex items-center"><i class="fas fa-gopuram fa-fw mr-2 text-amber-500"></i>Retirement Corpus</h3>
+                        <p class="text-3xl font-semibold text-amber-800 mt-1">₹5.45 Cr</p>
+                    </div>
+                    <div class="kpi-card bg-teal-50 p-5 rounded-xl shadow-md hover:shadow-lg cursor-pointer" onclick="showKPIDetail('Life Insurance Surplus', '₹15.31 Cr', 'The surplus life insurance coverage based on Human Life Value calculation. (Akshay: ₹8.34Cr, Rozy: ₹6.97Cr)', 'pageInsurance')">
+                        <h3 class="text-sm font-medium text-teal-700 flex items-center"><i class="fas fa-shield-heart fa-fw mr-2 text-teal-500"></i>Life Insurance Surplus</h3>
+                        <p class="text-3xl font-semibold text-teal-800 mt-1">₹15.31 Cr</p>
+                    </div>
+                    <div class="kpi-card bg-rose-50 p-5 rounded-xl shadow-md hover:shadow-lg cursor-pointer" onclick="showKPIDetail('Contingency Fund', '₹3,09,438', 'Funds set aside for emergencies. This is based on the Emergency Fund goal.', 'pageGoals')">
+                        <h3 class="text-sm font-medium text-rose-700 flex items-center"><i class="fas fa-briefcase-medical fa-fw mr-2 text-rose-500"></i>Contingency Fund</h3>
+                        <p class="text-3xl font-semibold text-rose-800 mt-1">₹3,09,438</p>
+                    </div>
+                </div>
+                <!-- Tax Regime Recommendation Table Card -->
+                <div class="mb-8 bg-white p-5 rounded-xl card-shadow">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-5">Tax Regime Recommendation</h3>
+                    <div class="overflow-x-auto mb-5">
+                        <table class="min-w-full text-sm">
+                            <thead class="table-header">
+                                <tr>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Person</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Recommended Regime</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-3">Akshay Sood</td>
+                                    <td class="px-5 py-3 text-green-700 font-semibold">New Regime</td>
+                                </tr>
+                                <tr class="table-row-even">
+                                    <td class="px-5 py-3">Rozy Sood</td>
+                                    <td class="px-5 py-3 text-green-700 font-semibold">New Regime</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="insight-box insight-box-blue card-shadow">
+                        <h3 class="text-lg font-semibold text-blue-700 mb-2 flex items-center"><i class="fas fa-lightbulb fa-fw mr-2"></i>Recommendation</h3>
+                        <p class="text-blue-600 text-sm">Based on the provided income and investment details, switching to the New Tax Regime is recommended for both individuals to optimize tax savings.</p>
+                    </div>
+                </div>
+                <!-- Grid for Assets and Liabilities charts -->
+                <div class="grid grid-cols-1 md:grid-cols-1 gap-5 md:gap-7">
+                    <!-- Donut Chart for Asset Allocation -->
+                    <div class="bg-white p-5 rounded-xl card-shadow">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-5">Asset Allocation</h3>
+                        <div class="chart-container"><canvas id="assetAllocationChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GOALS PAGE -->
+            <div id="pageGoals" class="page-content">
+                <h2 class="text-3xl font-semibold text-gray-800 mb-8">Goal Planning</h2>
+                <!-- Slicer Buttons Card -->
+                <div class="mb-8 p-5 bg-white rounded-xl card-shadow">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Filter Goals by Timeline</h3>
+                    <div class="flex flex-wrap gap-x-4 gap-y-3">
+                         <div class="slicer-group">
+                             <div class="flex flex-wrap gap-2">
+                                <!-- Buttons that filter the goals based on timeline -->
+                                <button class="slicer-button text-gray-700 text-sm py-1.5 px-3.5 rounded-lg" onclick="applyGoalTimelineSlicer('Immediate', this)">Immediate</button>
+                                <button class="slicer-button text-gray-700 text-sm py-1.5 px-3.5 rounded-lg" onclick="applyGoalTimelineSlicer('Mid-Term', this)">Mid-Term</button>
+                                <button class="slicer-button text-gray-700 text-sm py-1.5 px-3.5 rounded-lg" onclick="applyGoalTimelineSlicer('Long-Term', this)">Long-Term</button>
+                                <button class="slicer-button text-gray-700 text-sm py-1.5 px-3.5 rounded-lg active" onclick="applyGoalTimelineSlicer('All', this)">All</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Goal Metrics Table Card -->
+                <div class="bg-white p-5 rounded-xl card-shadow">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-5">Goal Metrics</h3>
+                    <div class="overflow-x-auto">
+                        <table id="goalMetricsTable" class="min-w-full">
+                            <!-- Header for Goal Metrics Table -->
+                            <thead class="table-header">
+                                <tr>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Goal</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Target ₹</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Allocated ₹</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">SIP ₹</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">% Funded</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm">
+                                <tr class="table-row-odd goal-row" data-timeline="Long-Term">
+                                    <td class="px-5 py-4 whitespace-nowrap">Retirement</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹5,45,16,998</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹43,79,565</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹0</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">8%</td>
+                                    <td class="px-5 py-4 whitespace-nowrap"><span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Achievable</span></td>
+                                </tr>
+                                <tr class="table-row-even goal-row" data-timeline="Long-Term">
+                                    <td class="px-5 py-4 whitespace-nowrap">Retirement Travelling</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹3,00,65,130</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹3,93,223</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹21,000</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">1%</td>
+                                    <td class="px-5 py-4 whitespace-nowrap"><span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Achievable</span></td>
+                                </tr>
+                                <tr class="table-row-odd goal-row" data-timeline="Mid-Term">
+                                    <td class="px-5 py-4 whitespace-nowrap">Annual Obligations</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹1,08,876</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹0</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹9,000</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">0%</td>
+                                    <td class="px-5 py-4 whitespace-nowrap"><span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Achievable</span></td>
+                                </tr>
+                                <tr class="table-row-even goal-row" data-timeline="Mid-Term">
+                                    <td class="px-5 py-4 whitespace-nowrap">Multi-year Goods</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹39,792</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹0</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹3,500</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">0%</td>
+                                    <td class="px-5 py-4 whitespace-nowrap"><span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Achievable</span></td>
+                                </tr>
+                                <tr class="table-row-odd goal-row" data-timeline="Mid-Term">
+                                    <td class="px-5 py-4 whitespace-nowrap">International Vacation</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹5,00,000</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹0</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹41,000</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">0%</td>
+                                    <td class="px-5 py-4 whitespace-nowrap"><span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Achievable</span></td>
+                                </tr>
+                                <tr class="table-row-even goal-row" data-timeline="Mid-Term">
+                                    <td class="px-5 py-4 whitespace-nowrap">Domestic Vacation</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹1,00,000</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹0</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹8,500</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">0%</td>
+                                    <td class="px-5 py-4 whitespace-nowrap"><span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Achievable</span></td>
+                                </tr>
+                                <tr class="table-row-odd goal-row" data-timeline="Mid-Term">
+                                    <td class="px-5 py-4 whitespace-nowrap">Emergency Fund</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹3,09,438</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹3,09,438</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹0</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">100%</td>
+                                    <td class="px-5 py-4 whitespace-nowrap"><span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Achievable</span></td>
+                                </tr>
+                                <tr class="table-row-even goal-row" data-timeline="Immediate">
+                                    <td class="px-5 py-4 whitespace-nowrap">Child Birth</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹2,00,000</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹0</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹0</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">0%</td>
+                                    <td class="px-5 py-4 whitespace-nowrap"><span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Achievable</span></td>
+                                </tr>
+                                <tr class="table-row-odd goal-row" data-timeline="Immediate">
+                                    <td class="px-5 py-4 whitespace-nowrap">Land</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹20,00,000</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹0</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹0</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">0%</td>
+                                    <td class="px-5 py-4 whitespace-nowrap"><span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Achievable</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CASH FLOW PAGE -->
+            <div id="pageCashflow" class="page-content">
+                <h2 class="text-3xl font-semibold text-gray-800 mb-8">Cash Flow & Expenses</h2>
+                <div class="mb-8 bg-white p-5 rounded-xl card-shadow">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-5">Expense Overview</h3>
+                     <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead class="table-header">
+                                <tr>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount ₹ (Monthly)</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">% of Income</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-3">Groceries</td>
+                                    <td class="px-5 py-3">₹15,000</td>
+                                    <td class="px-5 py-3">4.1%</td>
+                                </tr>
+                                <tr class="table-row-even">
+                                    <td class="px-5 py-3">Utilities</td>
+                                    <td class="px-5 py-3">₹15,000</td>
+                                    <td class="px-5 py-3">4.1%</td>
+                                </tr>
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-3">Commute & Fuel</td>
+                                    <td class="px-5 py-3">₹3,000</td>
+                                    <td class="px-5 py-3">0.8%</td>
+                                </tr>
+                                <tr class="table-row-even">
+                                    <td class="px-5 py-3">Dineout</td>
+                                    <td class="px-5 py-3">₹1,500</td>
+                                    <td class="px-5 py-3">0.4%</td>
+                                </tr>
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-3">Health and Fitness</td>
+                                    <td class="px-5 py-3">₹3,000</td>
+                                    <td class="px-5 py-3">0.8%</td>
+                                </tr>
+                                <tr class="table-row-even">
+                                    <td class="px-5 py-3">Personal Care</td>
+                                    <td class="px-5 py-3">₹2,000</td>
+                                    <td class="px-5 py-3">0.5%</td>
+                                </tr>
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-3">Entertainment</td>
+                                    <td class="px-5 py-3">₹500</td>
+                                    <td class="px-5 py-3">0.1%</td>
+                                </tr>
+                                <tr class="table-row-even">
+                                    <td class="px-5 py-3">Shopping</td>
+                                    <td class="px-5 py-3">₹5,000</td>
+                                    <td class="px-5 py-3">1.4%</td>
+                                </tr>
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-3">Upskilling</td>
+                                    <td class="px-5 py-3">₹1,800</td>
+                                    <td class="px-5 py-3">0.5%</td>
+                                </tr>
+                                <tr class="font-semibold bg-slate-50 table-row-even">
+                                    <td class="px-5 py-3">Total Monthly Expenses</td>
+                                    <td class="px-5 py-3">₹48,000</td>
+                                    <td class="px-5 py-3">13.0%</td>
+                                </tr>
+                                <tr class="font-semibold bg-gray-100 table-row-odd">
+                                    <td class="px-5 py-3">Total Monthly Income</td>
+                                    <td class="px-5 py-3">₹3,70,000</td>
+                                    <td class="px-5 py-3">100%</td>
+                                </tr>
+                                <tr class="font-semibold bg-green-50 table-row-even">
+                                    <td class="px-5 py-3">Surplus</td>
+                                    <td class="px-5 py-3">₹3,22,000</td>
+                                    <td class="px-5 py-3">87.0%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-1 gap-5 md:gap-7 mb-8">
+                    <div class="bg-white p-5 rounded-xl card-shadow">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-5">Current Month Expense Breakdown</h3>
+                        <div class="chart-container"><canvas id="expenseBreakdownChart"></canvas></div>
+                    </div>
+                </div>
+                 <div class="insight-box insight-box-blue card-shadow">
+                    <h3 class="text-lg font-semibold text-blue-700 mb-2 flex items-center"><i class="fas fa-lightbulb fa-fw mr-2"></i>Insight</h3>
+                    <p class="text-blue-600 text-sm">Only 13% of total income is committed to monthly expenses, indicating very strong control over spending. The current monthly surplus is ₹3,22,000, which provides exceptional potential for accelerating goal achievement and wealth creation.</p>
+                </div>
+            </div>
+
+            <!-- LOANS PAGE -->
+            <div id="pageLoans" class="page-content">
+                <h2 class="text-3xl font-semibold text-gray-800 mb-8">Loans & Liabilities</h2>
+                <div class="bg-white p-5 rounded-xl card-shadow mb-8 text-center">
+                    <i class="fas fa-check-circle text-green-500 text-4xl mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700">No Liabilities</h3>
+                    <p class="text-gray-500 mt-2">There are no outstanding loans or liabilities reported in the financial plan.</p>
+                </div>
+            </div>
+
+            <!-- ASSETS PAGE -->
+            <div id="pageAssets" class="page-content">
+                <h2 class="text-3xl font-semibold text-gray-800 mb-8">Assets & Investments</h2>
+                <div class="bg-white p-5 rounded-xl card-shadow mb-8">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-5">Portfolio Snapshot</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead class="table-header">
+                                <tr>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Asset</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Value ₹</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Goal Tagged</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm">
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-4 whitespace-nowrap">Mutual Fund Holdings (Debt-Others)</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹9,00,000</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">Wealth Creation</td>
+                                </tr>
+                                <tr class="table-row-even">
+                                    <td class="px-5 py-4 whitespace-nowrap">Mutual Fund Holdings (Equity - Domestic)</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹9,00,000</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">Wealth Creation</td>
+                                </tr>
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-4 whitespace-nowrap">Bank Balance</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹15,73,089</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">Liquidity</td>
+                                </tr>
+                                <tr class="table-row-even">
+                                    <td class="px-5 py-4 whitespace-nowrap">Physical Gold</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹12,00,000</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">General</td>
+                                </tr>
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-4 whitespace-nowrap">FD/RDs</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹6,00,000</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">Emergency</td>
+                                </tr>
+                                <tr class="table-row-even">
+                                    <td class="px-5 py-4 whitespace-nowrap">Direct Equity</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹33,00,210</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">Wealth Creation</td>
+                                </tr>
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-4 whitespace-nowrap">SGBs</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹1,00,000</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">General</td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="bg-slate-50 font-semibold text-gray-700">
+                                <tr><td class="px-5 py-3 text-sm" colspan="4">Total Equity: ₹42,00,210</td></tr>
+                                <tr><td class="px-5 py-3 text-sm" colspan="4">Total Debt: ₹30,73,089</td></tr>
+                                <tr><td class="px-5 py-3 text-sm" colspan="4">Total Other Assets: ₹13,00,000</td></tr>
+                                <tr><td class="px-5 py-3 text-lg font-bold" colspan="4">Total Assets: ₹85,73,299</td></tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                 <div class="bg-white p-5 rounded-xl card-shadow">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-5">Asset Distribution</h3>
+                    <div class="chart-container"><canvas id="assetClassChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- RETIREMENT PAGE -->
+            <div id="pageRetirement" class="page-content">
+                <h2 class="text-3xl font-semibold text-gray-800 mb-8">Retirement Simulator</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
+                    <div class="lg:col-span-2 bg-white p-5 rounded-xl card-shadow">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-5">Retirement Forecast</h3>
+                        <ul class="space-y-3 text-sm text-gray-600">
+                            <li class="flex justify-between"><span>Required Corpus:</span> <strong id="reqCorpus" class="text-gray-800">₹5.45 Cr</strong></li>
+                            <li class="flex justify-between"><span>Current Corpus:</span> <strong id="currCorpus" class="text-gray-800">₹43.80 L</strong></li>
+                            <li class="flex justify-between"><span>Projected (at <span id="projReturnRate" class="font-semibold">12</span>%):</span> <strong id="projCorpus" class="text-gray-800">₹5.45 Cr</strong></li>
+                            <li class="flex justify-between"><span>SIP Gap:</span> <strong id="sipGapRet" class="text-green-600">₹0/m</strong></li>
+                            <li class="flex justify-between"><span>Retirement in:</span> <strong id="retYears" class="text-gray-800">23 years</strong></li>
+                            <li class="pt-2 flex justify-between items-center"><span>Funding Status:</span> <strong id="fundingStatus" class="text-lg text-green-500">100%</strong></li>
+                        </ul>
+                    </div>
+                    <div class="lg:col-span-3 bg-white p-5 rounded-xl card-shadow">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-5">What-If Tools</h3>
+                        <!-- Keep all the sliders disabled and set the initial value accordingly -->
+                        <div class="space-y-5">
+                            <div class="slider-container">
+                                <label for="sipSlider">Adjust SIP (₹):</label>
+                                <input type="range" id="sipSlider" name="sipSlider" min="0" max="50000" value="0" step="1000" class="w-full"  disabled>
+                                <span id="sipSliderValue">₹0</span>
+                            </div>
+                            <div class="slider-container">
+                                <label for="retAgeSlider">Retirement Age:</label>
+                                <input type="range" id="retAgeSlider" name="retAgeSlider" min="55" max="65" value="60" step="1" disabled>
+                                <span id="retAgeSliderValue">60 yrs</span>
+                            </div>
+                             <div class="slider-container">
+                                <label for="inflationToggle">Inflation (%):</label>
+                                <input type="range" id="inflationToggle" name="inflationToggle" min="4" max="8" value="5" step="0.5" disabled>
+                                 <span id="inflationToggleValue">5.0%</span>
+                            </div>
+                        </div>
+                        <button class="mt-6 w-full bg-gray-400 text-white py-2.5 px-4 rounded-lg text-sm font-medium" disabled>Recalculate Projection</button>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl card-shadow mb-8">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-5">Expense Projection Post-Retirement</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead class="table-header">
+                                <tr>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Age</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Expense p.a. ₹</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Corpus Remaining ₹</th>
+                                </tr>
+                            </thead>
+                            <!-- Always show years 5 years apart, starting from retirement age -->
+                            <tbody id="expenseProjectionTable" class="text-sm">
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-4 whitespace-nowrap">60</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹30,31,802</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹5,82,26,257</td>
+                                </tr>
+                                <tr class="table-row-even">
+                                    <td class="px-5 py-4 whitespace-nowrap">65</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹38,69,433</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹6,27,65,605</td>
+                                </tr>
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-4 whitespace-nowrap">70</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹49,38,486</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹6,32,96,050</td>
+                                </tr>
+                                <tr class="table-row-even">
+                                    <td class="px-5 py-4 whitespace-nowrap">75</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹63,02,899</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹5,63,11,250</td>
+                                </tr>
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-4 whitespace-nowrap">80</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹80,44,273</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹3,62,42,840</td>
+                                </tr>
+                                <tr class="table-row-even">
+                                    <td class="px-5 py-4 whitespace-nowrap">85</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹77,00,068</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="insight-box insight-box-green card-shadow">
+                    <h3 class="text-lg font-semibold text-green-700 mb-2 flex items-center"><i class="fas fa-chart-line fa-fw mr-2"></i>Insight</h3>
+                    <p id="retirementInsight" class="text-green-600 text-sm">Congratulations! The retirement goal is fully funded based on current projections. The corpus is expected to last until age 85. It is advisable to review the plan periodically to account for any lifestyle changes or market fluctuations.</p>
+                </div>
+            </div>
+
+            <!-- DISCRETIONARY RETIREMENT PAGE -->
+            <div id="pageDiscretionaryretirement" class="page-content">
+                <h2 class="text-3xl font-semibold text-gray-800 mb-8">Discretionary Retirement (Travel & Hobbies)</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
+                    <div class="lg:col-span-2 bg-white p-5 rounded-xl card-shadow">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-5">Discretionary Corpus Forecast</h3>
+                        <ul class="space-y-3 text-sm text-gray-600">
+                            <li class="flex justify-between"><span>Required Corpus:</span> <strong id="discReqCorpus" class="text-gray-800">₹3.01 Cr</strong></li>
+                            <li class="flex justify-between"><span>Current Allocation:</span> <strong id="discCurrCorpus" class="text-gray-800">₹3.93 L</strong></li>
+                            <li class="flex justify-between"><span>Projected (at <span id="discProjReturnRate" class="font-semibold">12</span>%):</span> <strong id="discProjCorpus" class="text-gray-800">₹3.01 Cr</strong></li>
+                            <li class="flex justify-between"><span>SIP Gap:</span> <strong id="discSipGapRet" class="text-green-600">₹0/m</strong></li>
+                            <li class="flex justify-between"><span>Achieve by:</span> <strong id="discRetYears" class="text-gray-800">23 years</strong></li>
+                            <li class="pt-2 flex justify-between items-center"><span>Funding Status:</span> <strong id="discFundingStatus" class="text-lg text-green-500">100%</strong></li>
+                        </ul>
+                    </div>
+                    <div class="lg:col-span-3 bg-white p-5 rounded-xl card-shadow">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-5">What-If Tools</h3>
+                        <!-- Keep all the sliders disabled and set the initial value accordingly -->
+                        <div class="space-y-5">
+                            <div class="slider-container">
+                                <label for="discSipSlider">Adjust SIP (₹):</label>
+                                <input type="range" id="discSipSlider" name="discSipSlider" min="15000" max="30000" value="21000" step="500" class="w-full" disabled>
+                                <span id="discSipSliderValue">₹21,000</span>
+                            </div>
+                            <div class="slider-container">
+                                <label for="discRetAgeSlider">Target Age:</label>
+                                <input type="range" id="discRetAgeSlider" name="discRetAgeSlider" min="55" max="70" value="60" step="1" disabled>
+                                <span id="discRetAgeSliderValue">60 yrs</span>
+                            </div>
+                             <div class="slider-container">
+                                <label for="discInflationToggle">Inflation (%):</label>
+                                <input type="range" id="discInflationToggle" name="discInflationToggle" min="3" max="6" value="5" step="0.5" disabled>
+                                 <span id="discInflationToggleValue">5.0%</span>
+                            </div>
+                        </div>
+                        <button class="mt-6 w-full bg-gray-400 text-white py-2.5 px-4 rounded-lg text-sm font-medium" disabled>Recalculate Projection</button>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl card-shadow mb-8">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-5">Annual Travel Expense Projection</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead class="table-header">
+                                <tr>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Age</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Annual Expense ₹</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Corpus Remaining ₹</th>
+                                </tr>
+                            </thead>
+                            <tbody id="discExpenseProjectionTable" class="text-sm">
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-4 whitespace-nowrap">60</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹19,58,807</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹3,11,58,174</td>
+                                </tr>
+                                <tr class="table-row-even">
+                                    <td class="px-5 py-4 whitespace-nowrap">65</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹24,99,990</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹3,13,92,581</td>
+                                </tr>
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-4 whitespace-nowrap">70</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹31,90,691</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹2,84,24,459</td>
+                                </tr>
+                                <tr class="table-row-even">
+                                    <td class="px-5 py-4 whitespace-nowrap">75</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹40,72,220</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹1,93,30,499</td>
+                                </tr>
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-4 whitespace-nowrap">80</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹49,49,809</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="insight-box insight-box-green card-shadow">
+                    <h3 class="text-lg font-semibold text-green-700 mb-2 flex items-center"><i class="fas fa-route fa-fw mr-2"></i>Insight</h3>
+                    <p id="discretionaryRetirementInsight" class="text-green-600 text-sm">The discretionary retirement goal is also fully funded. The corpus is projected to support travel and hobby expenses until age 80. Consistent investment has paid off, ensuring a comfortable and enjoyable retirement.</p>
+                </div>
+            </div>
+
+            <!-- INSURANCE PAGE -->
+            <div id="pageInsurance" class="page-content">
+                <h2 class="text-3xl font-semibold text-gray-800 mb-8">Insurance & Risk Management</h2>
+                <div class="bg-white p-5 rounded-xl card-shadow mb-8">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-5">Insurance Summary</h3>
+                     <div class="overflow-x-auto">
+                        <!-- INSURANCE SUMMARY TABLE -->
+                        <table class="min-w-full">
+                            <thead class="table-header">
+                                <tr>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Coverage Type</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Required Cover ₹</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Existing Cover ₹</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Gap/Surplus ₹</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm">
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-4 whitespace-nowrap">Health Insurance (Family Floater)</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">Adequate</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹1,10,00,000</td>
+                                    <td class="px-5 py-4 whitespace-nowrap text-green-600 font-semibold">Sufficient Base</td>
+                                </tr>
+                                <tr class="table-row-even">
+                                    <td class="px-5 py-4 whitespace-nowrap">Life Insurance (Akshay)</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹2,15,24,364</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹0</td>
+                                    <td class="px-5 py-4 whitespace-nowrap text-green-600 font-semibold">Surplus of ₹8,34,07,566</td>
+                                </tr>
+                                <tr class="table-row-odd">
+                                    <td class="px-5 py-4 whitespace-nowrap">Life Insurance (Rozy)</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹2,26,26,093</td>
+                                    <td class="px-5 py-4 whitespace-nowrap">₹0</td>
+                                    <td class="px-5 py-4 whitespace-nowrap text-green-600 font-semibold">Surplus of ₹6,96,84,924</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-white p-5 rounded-xl card-shadow mb-8">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-5">Human Life Value (HLV) - Akshay</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm">
+                                 <thead class="table-header">
+                                    <tr>
+                                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Component</th>
+                                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount ₹</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    <tr class="table-row-odd">
+                                        <td class="px-5 py-3">Liabilities</td>
+                                        <td class="px-5 py-3">₹0</td>
+                                    </tr>
+                                    <tr class="table-row-even">
+                                        <td class="px-5 py-3">Dependent Needs (PV of Future Expenses)</td>
+                                        <td class="px-5 py-3">₹1,93,24,364</td>
+                                    </tr>
+                                    <tr class="table-row-odd">
+                                        <td class="px-5 py-3">Goal Obligations (PV of Future Goals)</td>
+                                        <td class="px-5 py-3">₹22,00,000</td>
+                                    </tr>
+                                    <tr class="font-semibold table-row-even bg-slate-50">
+                                        <td class="px-5 py-3">Total Financial Need (A)</td>
+                                        <td class="px-5 py-3">₹2,15,24,364</td>
+                                    </tr>
+                                    <tr class="table-row-odd pt-4">
+                                        <td class="px-5 py-3">Less: Existing Life Insurance</td>
+                                        <td class="px-5 py-3">(₹0)</td>
+                                    </tr>
+                                    <tr class="table-row-even">
+                                        <td class="px-5 py-3">Less: Continuing Income (PV)</td>
+                                        <td class="px-5 py-3">(₹9,76,58,630)</td>
+                                    </tr>
+                                    <tr class="table-row-odd">
+                                        <td class="px-5 py-3">Less: Existing Assets</td>
+                                        <td class="px-5 py-3">(₹72,73,299)</td>
+                                    </tr>
+                                    <tr class="font-semibold table-row-even bg-slate-50">
+                                        <td class="px-5 py-3">Total Available Resources (B)</td>
+                                        <td class="px-5 py-3">₹10,49,31,929</td>
+                                    </tr>
+                                    <tr class="font-bold text-green-600 bg-green-50 table-row-odd">
+                                        <td class="px-5 py-3">Net Insurance Surplus (B - A)</td>
+                                        <td class="px-5 py-3">₹8,34,07,565</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl card-shadow mb-8">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-5">Human Life Value (HLV) - Rozy</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm">
+                                 <thead class="table-header">
+                                    <tr>
+                                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Component</th>
+                                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount ₹</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    <tr class="table-row-odd">
+                                        <td class="px-5 py-3">Liabilities</td>
+                                        <td class="px-5 py-3">₹0</td>
+                                    </tr>
+                                    <tr class="table-row-even">
+                                        <td class="px-5 py-3">Dependent Needs (PV of Future Expenses)</td>
+                                        <td class="px-5 py-3">₹2,04,26,093</td>
+                                    </tr>
+                                    <tr class="table-row-odd">
+                                        <td class="px-5 py-3">Goal Obligations (PV of Future Goals)</td>
+                                        <td class="px-5 py-3">₹22,00,000</td>
+                                    </tr>
+                                    <tr class="font-semibold table-row-even bg-slate-50">
+                                        <td class="px-5 py-3">Total Financial Need (A)</td>
+                                        <td class="px-5 py-3">₹2,26,26,093</td>
+                                    </tr>
+                                    <tr class="table-row-odd pt-4">
+                                        <td class="px-5 py-3">Less: Existing Life Insurance</td>
+                                        <td class="px-5 py-3">(₹0)</td>
+                                    </tr>
+                                    <tr class="table-row-even">
+                                        <td class="px-5 py-3">Less: Continuing Income (PV)</td>
+                                        <td class="px-5 py-3">(₹8,50,37,719)</td>
+                                    </tr>
+                                    <tr class="table-row-odd">
+                                        <td class="px-5 py-3">Less: Existing Assets</td>
+                                        <td class="px-5 py-3">(₹72,73,299)</td>
+                                    </tr>
+                                    <tr class="font-semibold table-row-even bg-slate-50">
+                                        <td class="px-5 py-3">Total Available Resources (B)</td>
+                                        <td class="px-5 py-3">₹9,23,11,018</td>
+                                    </tr>
+                                    <tr class="font-bold text-green-600 bg-green-50 table-row-odd">
+                                        <td class="px-5 py-3">Net Insurance Surplus (B - A)</td>
+                                        <td class="px-5 py-3">₹6,96,84,925</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                 <div class="insight-box insight-box-green card-shadow">
+                    <h3 class="text-lg font-semibold text-green-700 mb-2 flex items-center"><i class="fas fa-shield-alt fa-fw mr-2"></i>Advice</h3>
+                    <p class="text-green-600 text-sm">The HLV calculation indicates a significant life insurance surplus for both individuals, meaning existing assets and continuing income are more than sufficient to cover financial needs and goals in case of an unforeseen event. No additional life cover is required at this stage. The health insurance cover of ₹1.1 Cr is robust.</p>
+                </div>
+            </div>
+        
+        
+        </div>
+
+        <!-- FOOTER for all pages -->
+        <footer class="text-center p-5 text-sm text-gray-500 border-t border-gray-200">
+            Interactive Dashboard Demo &copy; 2024-2025. For demonstration purposes only.
+        </footer>
+    </div>
+
+    <!-- MODAL -->
+    <div id="detailModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 overflow-y-auto h-full w-full hidden flex items-center justify-center p-4 z-50">
+        <div class="relative bg-white p-6 border-0 w-full max-w-lg shadow-xl rounded-lg">
+            <div class="text-left">
+                <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200">
+                    <h3 class="text-xl leading-6 font-semibold text-gray-800" id="modalTitle">Detail</h3>
+                    <button id="closeModalButton" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <i class="fas fa-times fa-lg"></i>
+                    </button>
+                </div>
+                <div class="mt-2 py-3">
+                    <p class="text-base text-gray-700 whitespace-pre-line" id="modalValue"></p>
+                    <p class="text-sm text-gray-500 mt-4" id="modalDescription">(This is a demo. In a real dashboard, this could show a detailed breakdown, allow drillthrough, or present further actions.)</p>
+                </div>
+                <div id="modalFooterActions" class="mt-5 pt-4 border-t border-gray-200 text-right space-x-3">
+                     <button id="modalGoToPageButton" class="hidden px-5 py-2 text-white text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors">
+                        Go to Page
+                    </button>
+                    <button id="modalActionButton" class="px-5 py-2 bg-sky-600 text-white text-sm font-medium rounded-md shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Store chart instances to destroy them before re-rendering if needed
+        let charts = {};
+
+        // Helper to format currency
+        const formatCurrency = (value) => `₹${Number(value).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+        const formatPercentage = (value) => `${Number(value).toFixed(1)}%`;
+
+
+        // --- Page Navigation ---
+        const navItems = document.querySelectorAll('#mainNav .nav-item');
+        const pageContents = document.querySelectorAll('.page-content');
+
+        function switchPage(pageId) {
+            pageContents.forEach(page => {
+                page.classList.remove('active');
+                if (page.id === pageId) {
+                    page.classList.add('active');
+                }
+            });
+            navItems.forEach(nav => {
+                nav.classList.remove('active');
+                if (nav.dataset.page === pageId.replace('page', '').toLowerCase()) {
+                    nav.classList.add('active');
+                }
+            });
+            loadChartsForPage(pageId);
+        }
+
+        navItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const targetPageId = 'page' + this.dataset.page.charAt(0).toUpperCase() + this.dataset.page.slice(1);
+                switchPage(targetPageId);
+            });
+        });
+
+        // --- Modal Logic ---
+        const detailModal = document.getElementById('detailModal');
+        const closeModalButton = document.getElementById('closeModalButton');
+        const modalActionButton = document.getElementById('modalActionButton');
+        const modalGoToPageButton = document.getElementById('modalGoToPageButton');
+        const modalTitleElem = document.getElementById('modalTitle');
+        const modalValueElem = document.getElementById('modalValue');
+        const modalDescriptionElem = document.getElementById('modalDescription');
+
+        function showModal(title, value, description, targetPage = null) {
+            modalTitleElem.innerText = title;
+            modalValueElem.innerHTML = value; // Using innerHTML for potential strong tags or line breaks
+            modalDescriptionElem.innerText = description;
+
+            if (targetPage) {
+                modalGoToPageButton.classList.remove('hidden');
+                modalGoToPageButton.onclick = () => {
+                    switchPage(targetPage);
+                    hideModal();
+                };
+            } else {
+                modalGoToPageButton.classList.add('hidden');
+                modalGoToPageButton.onclick = null;
+            }
+
+            detailModal.classList.remove('hidden');
+            detailModal.classList.add('flex');
+        }
+
+        function hideModal() {
+            detailModal.classList.add('hidden');
+            detailModal.classList.remove('flex');
+        }
+        
+        window.showKPIDetail = (title, value, description, targetPage = null) => {
+            showModal(title, `<strong>Value:</strong> ${value}`, description, targetPage);
+        }
+        
+        closeModalButton.onclick = hideModal;
+        modalActionButton.onclick = hideModal;
+        window.onclick = (event) => {
+            if (event.target == detailModal) {
+                hideModal();
+            }
+        }
+
+        // --- Chart.js Common Config ---
+        const commonChartOptions = (chartTitle) => ({ // Added chartTitle parameter
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { padding: 20, font: { size: 12, family: 'Inter' }, color: '#4b5563' }
+                },
+                title: { display: false },
+                tooltip: {
+                    backgroundColor: '#1f2937', 
+                    titleColor: '#e5e7eb',
+                    bodyColor: '#d1d5db',
+                    titleFont: { family: 'Inter', weight: '600', size: 13 },
+                    bodyFont: { family: 'Inter', size: 12 },
+                    padding: 10,
+                    cornerRadius: 4,
+                    displayColors: true,
+                    borderColor: '#374151',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || context.label || '';
+                            if (label) { label += ': '; }
+                            let value = 0;
+                            if (context.parsed.y !== null && context.parsed.y !== undefined) {
+                                value = context.parsed.y;
+                            } else if (context.parsed !== null && context.parsed !== undefined && !isNaN(context.parsed)) {
+                                value = context.parsed;
+                            }
+                            
+                            if (context.dataset.isPercentage) {
+                                 label += formatPercentage(value);
+                            } else {
+                                 label += formatCurrency(value);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+        });
+        
+        function destroyChart(chartId) {
+            if (charts[chartId]) {
+                charts[chartId].destroy();
+                delete charts[chartId];
+            }
+        }
+
+        // --- Chart Implementations ---
+        function initSummaryCharts() {
+            destroyChart('assetAllocationChart');
+            const assetCtx = document.getElementById('assetAllocationChart').getContext('2d');
+            if (assetCtx) {
+                charts['assetAllocationChart'] = new Chart(assetCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Equity', 'Debt', 'Other'], 
+                        datasets: [{ 
+                            label: 'Asset Allocation', 
+                            data: [4200210, 3073089, 1300000], 
+                            backgroundColor: ['#38bdf8', '#fbbf24', '#34d399'], 
+                            borderColor: ['#ffffff'], borderWidth: 3, 
+                            hoverOffset: 8,
+                            hoverBorderColor: '#f1f5f9'
+                        }]
+                    },
+                    options: {...commonChartOptions('Asset Allocation'), cutout: '60%'}
+                });
+            }
+        }
+
+        function initCashflowCharts() {
+            destroyChart('expenseBreakdownChart');
+            const breakdownCtx = document.getElementById('expenseBreakdownChart').getContext('2d');
+            if(breakdownCtx) {
+                charts['expenseBreakdownChart'] = new Chart(breakdownCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Household', 'Lifestyle', 'Personal', 'Transport'],
+                        datasets: [{ 
+                            label: 'Expense Breakdown', 
+                            data: [30000, 7000, 6800, 3000], 
+                            backgroundColor: ['#60a5fa', '#fbbf24', '#34d399', '#a78bfa'], 
+                            borderColor: ['#ffffff'], borderWidth: 3, hoverOffset: 8, hoverBorderColor: '#f1f5f9'
+                        }]
+                    },
+                    options: commonChartOptions('Current Month Expense Breakdown')
+                });
+            }
+        }
+        
+        function initAssetsCharts() {
+            destroyChart('assetClassChart');
+            const assetClassCtx = document.getElementById('assetClassChart').getContext('2d');
+            if(assetClassCtx) {
+                charts['assetClassChart'] = new Chart(assetClassCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Mutual Fund (Debt)', 'Mutual Fund (Equity)', 'Bank Balance', 'Physical Gold', 'FD/RDs', 'Direct Equity', 'SGBs'],
+                        datasets: [{ 
+                            label: 'Asset Distribution', 
+                            data: [900000, 900000, 1573089, 1200000, 600000, 3300210, 100000], 
+                            backgroundColor: ['#38bdf8', '#fbbf24', '#34d399', '#a78bfa', '#f472b6', '#60a5fa', '#fdba74'], 
+                            borderColor: ['#ffffff'], borderWidth: 3,
+                            hoverOffset: 8, hoverBorderColor: '#f1f5f9'
+                        }]
+                    },
+                    options: commonChartOptions('Asset Distribution')
+                });
+            }
+        }
+
+
+        // --- Page Specific Logic ---
+        window.applyGoalTimelineSlicer = (timelineValue, clickedButton) => {
+            // Visually update active button
+            const slicerGroup = clickedButton.closest('.slicer-group');
+            slicerGroup.querySelectorAll('.slicer-button').forEach(btn => btn.classList.remove('active'));
+            clickedButton.classList.add('active');
+
+            // Simulate table filtering
+            const tableRows = document.querySelectorAll('#goalMetricsTable tbody .goal-row');
+            tableRows.forEach(row => {
+                if (timelineValue === 'All' || row.dataset.timeline === timelineValue) {
+                    row.classList.remove('hidden-by-filter');
+                } else {
+                    row.classList.add('hidden-by-filter');
+                }
+            });
+        };
+
+        function loadChartsForPage(pageId) {
+            setTimeout(() => {
+                if (pageId === 'pageSummary') initSummaryCharts();
+                if (pageId === 'pageCashflow') initCashflowCharts();
+                if (pageId === 'pageAssets') initAssetsCharts();
+            }, 100);
+        }
+
+        
+        window.onload = function() {
+            switchPage('pageSummary');
+        };
+
+
+    </script>
+</body>
+</html>
