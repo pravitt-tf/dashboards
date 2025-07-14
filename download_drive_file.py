@@ -5,7 +5,10 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
 FILE_ID = os.environ["HTML_FILE_ID"]
-DEST_FILE = "public/index.html"
+DEST_DIR = "public"
+DEST_FILE = os.path.join(DEST_DIR, "index.html")
+
+os.makedirs(DEST_DIR, exist_ok=True)
 
 creds = service_account.Credentials.from_service_account_info(
     eval(os.environ["GCP_SA_KEY"]),

@@ -1,4 +1,4 @@
-name: Deploy HTML from Google Apps Script to Netlify
+name: Secure Deploy to Netlify from Google Drive
 
 on:
   repository_dispatch:
@@ -10,24 +10,31 @@ jobs:
     environment: trial_env
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Write HTML content to file
-        run: |
-          echo "${{ github.event.client_payload.html }}" | base64 -d > latest-dashboard.html
-          echo "✅ HTML written to latest-dashboard.html"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Google Drive dependencies
+        run: pip install google-api-python-client google-auth
+
+      - name: Download HTML from private Drive via service account
+        run: python download_drive_file.py
+        env:
+          HTML_FILE_ID: ${{ github.event.client_payload.html_file_id }}
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install and Deploy with Netlify CLI
+      - name: Deploy to Netlify
         run: |
           npm install -g netlify-cli
-          mkdir public
-          mv latest-dashboard.html public/index.html
           netlify deploy --prod --dir=public
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
