@@ -37,4 +37,4 @@ jobs:
           dashboard_key=$(cat dashboard_key.txt)
           git add output_files/${dashboard_key}.html
           git commit -m "Add dashboard: ${dashboard_key}" || echo "No changes to commit"
-          git push origin HEAD
+          git push https://x-access-token:${{ secrets.GIT_TOKEN }}@github.com/pravitt-tf/dashboards.git HEAD:main
