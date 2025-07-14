@@ -38,3 +38,11 @@ jobs:
           git add output_files/${dashboard_key}.html
           git commit -m "Add dashboard: ${dashboard_key}" || echo "No changes to commit"
           git push origin HEAD
+          
+      - name: Send dashboard key back to Apps Script
+        run: |
+          dashboard_key=$(cat dashboard_key.txt)
+      
+          curl -X POST ${{ secrets.GAS_WEBHOOK_URL }} \
+            -H "Content-Type: application/json" \
+            -d "{\"key\": \"${dashboard_key}\"}"
