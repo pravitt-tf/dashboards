@@ -1,75 +1,31 @@
-# A descriptive name for your workflow, which will appear in the Actions tab.
-name: Deploy Latest Financial Dashboard to Netlify
+name: Deploy HTML from Google Apps Script to Netlify
 
-# This section defines the triggers that will run the workflow.
 on:
-  # This allows your Google Script to trigger it via an API call.
   repository_dispatch:
     types: [deploy-dashboard]
 
-  # This allows you to run the workflow manually from the Actions tab.
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel.
 jobs:
-  # We have a single job called "deploy".
   deploy:
-    # The type of virtual machine to run the job on. "ubuntu-latest" is standard and cost-effective.
     runs-on: ubuntu-latest
     environment: trial_env
 
-    # A job contains a sequence of tasks called steps.
     steps:
-      # Step 1: Checks out your repository so the workflow can access it. Not strictly needed here but good practice.
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Authenticates with Google using the service account key you stored as a secret.
-      - name: Authenticate with Google
-        uses: 'google-github-actions/auth@v2'
-        with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
-
-      # Step 3: Installs the Google Cloud command-line tool.
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      # Step 4: This is the core logic for getting your file from Google Drive.
-      - name: Find and Download Latest Dashboard
+      - name: Write HTML content to file
         run: |
-          # Use gcloud to list files in the specific Drive folder.
-          # --q filters for files within your folder.
-          # --sort-by "createdTime desc" lists the newest files first.
-          # --limit 1 gets only the top result (the newest one).
-          # --format "value(id)" extracts just the file ID.
-          LATEST_FILE_ID=$(gcloud drive files list --q "'${{ secrets.GDRIVE_FOLDER_ID }}' in parents and trashed=false" --sort-by "createdTime desc" --limit 1 --format "value(id)")
+          echo "${{ github.event.client_payload.html }}" | base64 -d > latest-dashboard.html
+          echo "✅ HTML written to latest-dashboard.html"
 
-          # Exit if the folder is empty.
-          if [ -z "$LATEST_FILE_ID" ]; then
-            echo "No files found in the folder."
-            exit 1
-          fi
-          
-          echo "Latest file ID found: $LATEST_FILE_ID"
-          
-          # Use gcloud to download that specific file by its ID.
-          # --dest-file renames the downloaded file for the next step.
-          gcloud drive files download $LATEST_FILE_ID --dest-file latest-dashboard.html
-          echo "Downloaded latest-dashboard.html successfully."
-        
-      # Step 5: Installs Node.js, which is required to run the Netlify CLI.
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # Step 6: Installs the Netlify CLI and deploys your file.
       - name: Install and Deploy with Netlify CLI
         run: |
-          # Install the Netlify command-line tool.
           npm install -g netlify-cli
-          # Deploy the single file to production.
-          # The --prod flag sends it to your main site URL.
           netlify deploy --prod --file latest-dashboard.html
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
