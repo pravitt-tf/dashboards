@@ -29,10 +29,12 @@ jobs:
 
       # Step 3: Authenticates with Google using the service account key you stored as a secret.
       - name: Authenticate with Google
-        if: secrets.GCP_SA_KEY != ''
+        if: env.GCP_SA_KEY != ''
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
 
       # Step 4: This is the core logic for getting your file from Google Drive.
       - name: Find and Download Latest Dashboard
