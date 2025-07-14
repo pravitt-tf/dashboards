@@ -1,22 +1,110 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Enter Dashboard Key</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter Dashboard Key</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Use Inter as the default font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
 </head>
-<body>
-  <h2>Enter your Dashboard Key:</h2>
-  <input type="text" id="dashboardKey" placeholder="e.g. abc123" />
-  <button onclick="goToDashboard()">Go</button>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen">
 
-  <script>
-    function goToDashboard() {
-      const key = document.getElementById("dashboardKey").value.trim();
-      if (key) {
-        window.location.href = `/${key}.html`;
-      } else {
-        alert("Please enter a dashboard key.");
-      }
-    }
-  </script>
+    <div class="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-lg">
+        
+        <!-- Logo Section -->
+        <div class="flex justify-center">
+            <svg class="w-16 h-16 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+            </svg>
+        </div>
+
+        <div class="text-center">
+            <h2 class="text-2xl font-bold text-gray-900">Dashboard Access</h2>
+            <p class="mt-2 text-sm text-gray-600">Please enter your unique key to continue.</p>
+        </div>
+
+        <!-- Form for key submission -->
+        <form id="keyForm" class="mt-8 space-y-6">
+            <div>
+                <label for="dashboardKey" class="sr-only">Dashboard Key</label>
+                <input type="text" id="dashboardKey" name="dashboardKey" required 
+                       class="w-full px-4 py-3 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+                       placeholder="e.g. abc123">
+            </div>
+
+            <div>
+                <button type="submit" 
+                        class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-200">
+                    Go to Dashboard
+                </button>
+            </div>
+        </form>
+        
+        <!-- Error Message Display -->
+        <div id="errorMessage" class="hidden mt-4 text-center text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+            <!-- Error messages will be inserted here by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // Get form and input elements
+        const keyForm = document.getElementById('keyForm');
+        const dashboardKeyInput = document.getElementById('dashboardKey');
+        const errorMessageDiv = document.getElementById('errorMessage');
+
+        // Listen for form submission
+        keyForm.addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the default form submission
+            goToDashboard();
+        });
+
+        async function goToDashboard() {
+            const key = dashboardKeyInput.value.trim();
+            
+            // Hide previous error messages
+            errorMessageDiv.classList.add('hidden');
+            errorMessageDiv.textContent = '';
+
+            if (!key) {
+                showError("Please enter a dashboard key.");
+                return;
+            }
+
+            const url = `/${key}.html`;
+
+            try {
+                // Use fetch to check if the page exists without navigating
+                const response = await fetch(url, { method: 'HEAD' });
+
+                if (response.ok) {
+                    // If the page exists (status 200-299), redirect to it
+                    window.location.href = url;
+                } else {
+                    // If the page does not exist (e.g., 404), show an error
+                    showError(`The dashboard key "${key}" is invalid or the page does not exist.`);
+                }
+            } catch (error) {
+                // This catches network errors, etc.
+                console.error('Error checking dashboard URL:', error);
+                showError("Could not verify the dashboard key. Please check your connection and try again.");
+            }
+        }
+
+        function showError(message) {
+            errorMessageDiv.textContent = message;
+            errorMessageDiv.classList.remove('hidden');
+        }
+    </script>
+
 </body>
 </html>
