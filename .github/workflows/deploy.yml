@@ -27,15 +27,14 @@ jobs:
           HTML_FILE_ID: ${{ github.event.client_payload.html_file_id }}
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Deploy to Netlify
+      - name: Configure Git
         run: |
-          npm install -g netlify-cli
-          netlify deploy --prod --dir=public
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit and push new dashboard file
+        run: |
+          dashboard_key=$(cat dashboard_key.txt)
+          git add output_files/${dashboard_key}.html
+          git commit -m "Add dashboard: ${dashboard_key}" || echo "No changes to commit"
+          git push origin HEAD
